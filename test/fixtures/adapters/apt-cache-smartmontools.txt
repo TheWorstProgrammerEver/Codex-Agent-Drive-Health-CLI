@@ -1,0 +1,7 @@
+smartmontools:
+  Installed: (none)
+  Candidate: 7.3-1+b1
+  Version table:
+     7.3-1+b1 500
+        500 http://deb.debian.org/debian bookworm/main arm64 Packages
+
