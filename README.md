@@ -1,8 +1,9 @@
 # Codex-Agent-Drive-Health-CLI
 
-`drive-health` is a read-only diagnostics CLI for Raspberry Pi agent hosts and
-Daedalus-style Debian hosts. The first slice focuses on `check` and `doctor`;
-future issues will add suggestion, apply, and learning workflows.
+`drive-health` is a diagnostics and vetted-remedy CLI for Raspberry Pi agent
+hosts and Daedalus-style Debian hosts. It collects read-only drive-health data,
+suggests curated longevity remedies, and can apply a small allowlist of
+low-risk changes with dry-run-first plans, backups, and verification.
 
 ## Commands
 
@@ -12,6 +13,8 @@ npm run build
 npm test
 npm run drive-health -- check
 npm run drive-health -- check --json
+npm run drive-health -- suggest
+npm run drive-health -- apply limit-journald-disk-usage --dry-run
 npm run drive-health -- doctor
 ```
 
@@ -25,8 +28,21 @@ drive-health learn [--source local|docs|agent] [--open-pr]
 drive-health doctor
 ```
 
-Only `check` and basic `doctor` are implemented in this issue. `suggest`,
-`apply`, and `learn` intentionally return a not-yet-implemented exit code.
+`check`, `suggest`, dry-run `apply`, and basic `doctor` are implemented.
+`learn` intentionally returns a not-yet-implemented exit code.
+
+`apply` defaults to dry-run. Non-dry-run execution requires `--yes`, and only
+executable remedies in the curated catalogue can change files or service state.
+Riskier remedies remain advisory and print concrete review commands without
+executing them.
+
+## Remedy Catalogue
+
+Curated remedies live under `remedies/<remedy-id>/remedy.md`, with executable
+metadata in `src/remedies/catalogue.ts`. Markdown owns rationale, risks,
+compatibility, verification, and rollback notes; TypeScript owns detection,
+selection, idempotence, backups, and command execution. The apply engine uses
+static allowlisted commands only.
 
 ## Report Safety
 
