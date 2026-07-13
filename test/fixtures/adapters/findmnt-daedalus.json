@@ -1,0 +1,27 @@
+{
+  "filesystems": [
+    {
+      "target": "/",
+      "source": "/dev/sda2",
+      "fstype": "ext4",
+      "options": "rw,noatime",
+      "size": 999130704896,
+      "used": 123456789,
+      "avail": 998000000000,
+      "use%": "1%",
+      "children": [
+        {
+          "target": "/boot/firmware",
+          "source": "/dev/sda1",
+          "fstype": "vfat",
+          "options": "rw,relatime",
+          "size": 1073741824,
+          "used": 100000000,
+          "avail": 973741824,
+          "use%": "10%"
+        }
+      ]
+    }
+  ]
+}
+

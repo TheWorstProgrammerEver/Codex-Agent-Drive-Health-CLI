@@ -1,0 +1,20 @@
+{
+  "name": "codex-agent-drive-health-cli",
+  "version": "0.1.0",
+  "description": "Read-only drive health diagnostics for Codex-managed Debian and Raspberry Pi hosts.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "drive-health": "./dist/src/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "check": "npm run build && npm test",
+    "drive-health": "node dist/src/cli.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.14",
+    "typescript": "^5.8.3"
+  }
+}

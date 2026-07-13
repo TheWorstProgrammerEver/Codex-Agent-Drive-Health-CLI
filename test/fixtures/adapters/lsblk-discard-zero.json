@@ -1,0 +1,49 @@
+{
+  "blockdevices": [
+    {
+      "name": "sda",
+      "kname": "sda",
+      "type": "disk",
+      "size": 1000204886016,
+      "model": "Portable SSD T5",
+      "vendor": "Samsung",
+      "tran": "usb",
+      "rm": false,
+      "rota": false,
+      "mountpoints": [null],
+      "disc-gran": 0,
+      "disc-max": 0,
+      "disc-zero": false,
+      "children": [
+        {
+          "name": "sda1",
+          "kname": "sda1",
+          "pkname": "sda",
+          "type": "part",
+          "size": 1073741824,
+          "mountpoints": ["/boot/firmware"],
+          "fstype": "vfat",
+          "partuuid": "11111111-01",
+          "disc-gran": 0,
+          "disc-max": 0,
+          "disc-zero": false
+        },
+        {
+          "name": "sda2",
+          "kname": "sda2",
+          "pkname": "sda",
+          "type": "part",
+          "size": 999130704896,
+          "mountpoints": ["/"],
+          "fstype": "ext4",
+          "uuid": "22222222-2222-2222-2222-222222222222",
+          "partuuid": "11111111-02",
+          "disc-gran": 0,
+          "disc-max": 0,
+          "disc-zero": false
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,3 @@
+NAME       TYPE SIZE USED PRIO
+/var/swap  file 209715200 0 -2
+
