@@ -1,11 +1,11 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildAgentPromptContext } from "../src/agent/context.js";
-import { createFixtureCodexRunner } from "../src/agent/codexRunner.js";
+import { createCodexCliRunner, createFixtureCodexRunner } from "../src/agent/codexRunner.js";
 import { hydratePromptFile, prettyJson } from "../src/agent/prompts.js";
 import { runLearnWorkflow } from "../src/agent/workflow.js";
 import type { DriveHealthReport } from "../src/report/model.js";
@@ -62,8 +62,80 @@ test("learn workflow writes review-only candidate artifacts from mocked Codex ou
   }
 });
 
+test("Codex CLI runner uses supported read-only noninteractive arguments", async () => {
+  const root = mkdtempSync(join(tmpdir(), "drive-health-codex-runner-"));
+  const commandPath = join(root, "fake-codex");
+  const argsPath = join(root, "args.txt");
+  const stdinPath = join(root, "stdin.txt");
+  const previousArgsPath = process.env.DRIVE_HEALTH_CAPTURE_ARGS_PATH;
+  const previousStdinPath = process.env.DRIVE_HEALTH_CAPTURE_STDIN_PATH;
+
+  try {
+    writeFileSync(commandPath, [
+      "#!/bin/sh",
+      "set -eu",
+      "printf '%s\\n' \"$@\" > \"$DRIVE_HEALTH_CAPTURE_ARGS_PATH\"",
+      "cat > \"$DRIVE_HEALTH_CAPTURE_STDIN_PATH\"",
+      "output_path=''",
+      "previous=''",
+      "for argument in \"$@\"; do",
+      "  if [ \"$previous\" = '--output-last-message' ]; then",
+      "    output_path=\"$argument\"",
+      "    break",
+      "  fi",
+      "  previous=\"$argument\"",
+      "done",
+      "if [ -z \"$output_path\" ]; then",
+      "  echo 'missing --output-last-message path' >&2",
+      "  exit 2",
+      "fi",
+      "printf 'fake codex response\\n' > \"$output_path\"",
+      "",
+    ].join("\n"));
+    chmodSync(commandPath, 0o700);
+    process.env.DRIVE_HEALTH_CAPTURE_ARGS_PATH = argsPath;
+    process.env.DRIVE_HEALTH_CAPTURE_STDIN_PATH = stdinPath;
+
+    const result = await createCodexCliRunner({
+      command: commandPath,
+      cwd: root,
+      model: "gpt-5.6-sol",
+      timeoutMs: 5000,
+    }).run({
+      promptName: "explain-findings",
+      prompt: "Explain the sanitized report.",
+    });
+
+    const args = readFileSync(argsPath, "utf8").trim().split("\n");
+    const configIndex = args.indexOf("-c");
+
+    assert.equal(result.text, "fake codex response\n");
+    assert.equal(args[0], "exec");
+    assert.notEqual(configIndex, -1);
+    assert.equal(args[configIndex + 1], "approval_policy=\"never\"");
+    assert.equal(args[args.indexOf("--sandbox") + 1], "read-only");
+    assert.equal(args[args.indexOf("--model") + 1], "gpt-5.6-sol");
+    assert.equal(args.at(-1), "-");
+    assert.equal(readFileSync(stdinPath, "utf8"), "Explain the sanitized report.");
+    assert.equal(args.includes("--ask-for-approval"), false);
+  } finally {
+    restoreEnv("DRIVE_HEALTH_CAPTURE_ARGS_PATH", previousArgsPath);
+    restoreEnv("DRIVE_HEALTH_CAPTURE_STDIN_PATH", previousStdinPath);
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 async function readReport(path: string): Promise<DriveHealthReport> {
   return JSON.parse(await readFile(path, "utf8")) as DriveHealthReport;
+}
+
+function restoreEnv(name: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[name];
+    return;
+  }
+
+  process.env[name] = value;
 }
 
 function privateReport(): DriveHealthReport {

@@ -20,10 +20,10 @@ export function createCodexCliRunner(options: CodexCliRunnerOptions = {}): Codex
         const args = [
           "exec",
           "--ephemeral",
+          "-c",
+          "approval_policy=\"never\"",
           "--sandbox",
           "read-only",
-          "--ask-for-approval",
-          "never",
           "--skip-git-repo-check",
           "--output-last-message",
           outputPath,
