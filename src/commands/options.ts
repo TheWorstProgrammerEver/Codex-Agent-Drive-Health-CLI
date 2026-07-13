@@ -1,4 +1,5 @@
 import type { HostProfile } from "../report/model.js";
+import { DEFAULT_REPORT_RETENTION_COUNT } from "../state/reports.js";
 
 export class CliError extends Error {
   constructor(
@@ -14,6 +15,10 @@ export interface CheckOptions {
   target: string;
   profile: HostProfile;
   includeIdentifiers: boolean;
+  writeReport: boolean;
+  quiet: boolean;
+  stateDir?: string;
+  retentionCount: number;
 }
 
 export interface SuggestOptions {
@@ -41,6 +46,9 @@ export function parseCheckOptions(args: string[]): CheckOptions {
     target: "/",
     profile: "auto",
     includeIdentifiers: false,
+    writeReport: false,
+    quiet: false,
+    retentionCount: DEFAULT_REPORT_RETENTION_COUNT,
   };
 
   for (let index = 0; index < args.length; index += 1) {
@@ -53,6 +61,16 @@ export function parseCheckOptions(args: string[]): CheckOptions {
 
     if (arg === "--include-identifiers") {
       options.includeIdentifiers = true;
+      continue;
+    }
+
+    if (arg === "--write-report") {
+      options.writeReport = true;
+      continue;
+    }
+
+    if (arg === "--quiet") {
+      options.quiet = true;
       continue;
     }
 
@@ -72,7 +90,23 @@ export function parseCheckOptions(args: string[]): CheckOptions {
       continue;
     }
 
+    if (arg === "--state-dir") {
+      options.stateDir = readValue(args, index, "--state-dir");
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--retention-count") {
+      options.retentionCount = parsePositiveInteger(readValue(args, index, "--retention-count"), "--retention-count");
+      index += 1;
+      continue;
+    }
+
     throw new CliError(`Unknown check option '${arg}'.`);
+  }
+
+  if (options.quiet && !options.writeReport) {
+    throw new CliError("--quiet requires --write-report.");
   }
 
   return options;
@@ -164,4 +198,12 @@ export function readValue(args: string[], index: number, flag: string): string {
   }
 
   return value;
+}
+
+export function parsePositiveInteger(value: string, flag: string): number {
+  if (!/^[1-9]\d*$/.test(value)) {
+    throw new CliError(`${flag} must be a positive integer.`);
+  }
+
+  return Number(value);
 }

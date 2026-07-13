@@ -152,7 +152,7 @@ export const REMEDIES: readonly RemedyMetadata[] = [
     title: "Clean package manager cache",
     summary: "Use apt's own cache cleanup commands after reviewing cache size and package-manager state.",
     markdownPath: "remedies/clean-package-cache/remedy.md",
-    findingIds: [],
+    findingIds: ["package-cache-footprint", "pi-usb-flash-low-write-profile"],
     mode: "advisory",
     risk: "low",
     advisory: {

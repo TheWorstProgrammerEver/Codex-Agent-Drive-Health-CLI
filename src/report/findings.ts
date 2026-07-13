@@ -3,13 +3,20 @@ import { formatBytes } from "../adapters/bytes.js";
 import type { DriveHealthReport, Finding, MountInfo, ToolAvailability } from "./model.js";
 
 export function buildFindings(report: Omit<DriveHealthReport, "findings">): Finding[] {
-  return [
+  const findings = [
     rootAtimeFinding(report.filesystems, report.target),
     trimFinding(report),
     smartctlFinding(report.tools),
     journaldFinding(report),
     swapFinding(report),
+    packageCacheFinding(report),
   ];
+
+  if (report.profile === "pi-usb-flash") {
+    findings.push(piUsbFlashProfileFinding(report));
+  }
+
+  return findings;
 }
 
 function rootAtimeFinding(filesystems: MountInfo[], target: string): Finding {
@@ -167,3 +174,61 @@ function swapFinding(report: Omit<DriveHealthReport, "findings">): Finding {
   };
 }
 
+function packageCacheFinding(report: Omit<DriveHealthReport, "findings">): Finding {
+  const cache = report.directoryUsage.find((entry) => entry.path === "/var/cache/apt");
+  if (!cache || cache.status !== "ok") {
+    return {
+      id: "package-cache-footprint",
+      severity: "unsupported",
+      title: "Package cache footprint",
+      summary: "Package cache size was not collected.",
+      evidence: { status: cache?.status, message: cache?.message },
+      recommendation: "Measure /var/cache/apt before deciding whether cleanup is worthwhile.",
+    };
+  }
+
+  const large = (cache.sizeBytes ?? 0) > 512 * 1024 ** 2;
+  return {
+    id: "package-cache-footprint",
+    severity: large ? "opportunity" : "info",
+    title: "Package cache footprint",
+    summary: `Apt cache uses ${formatBytes(cache.sizeBytes)}.`,
+    evidence: { path: cache.path, sizeBytes: cache.sizeBytes },
+    recommendation: large ? "Use apt's own cache cleanup commands after package-manager activity is idle." : undefined,
+  };
+}
+
+function piUsbFlashProfileFinding(report: Omit<DriveHealthReport, "findings">): Finding {
+  const root = report.filesystems.find((filesystem) => filesystem.target === report.target) ?? report.filesystems.find((filesystem) => filesystem.target === "/");
+  const rootOptions = root?.options ?? [];
+  const aptCache = report.directoryUsage.find((entry) => entry.path === "/var/cache/apt");
+  const checks = {
+    rootNoatime: rootOptions.includes("noatime"),
+    trimVerified: report.trim.advertisedDiscard === "supported" && report.trim.dryRun.entries.length > 0,
+    fstrimScheduled: report.trim.timer.unitFileState === "enabled" && report.trim.timer.activeState === "active",
+    journaldBounded: !report.journald.persistentDirectoryPresent || (report.journald.diskUsageBytes ?? 0) <= 256 * 1024 ** 2,
+    lowWriteSwap: report.swap.zramDevices.length > 0 || !report.swap.diskBackedSwapActive,
+    aptCacheBounded: aptCache?.status === "ok" && (aptCache.sizeBytes ?? 0) <= 512 * 1024 ** 2,
+  };
+  const reviewItems = Object.entries(checks)
+    .filter(([, passed]) => !passed)
+    .map(([name]) => name);
+
+  return {
+    id: "pi-usb-flash-low-write-profile",
+    severity: reviewItems.length === 0 ? "ok" : reviewItems.length <= 2 ? "opportunity" : "warning",
+    title: "Pi USB flash low-write profile",
+    summary: reviewItems.length === 0
+      ? "The collected checks match the low-write Pi USB flash profile."
+      : `Review ${reviewItems.length} low-write profile item(s): ${reviewItems.join(", ")}.`,
+    evidence: {
+      checks,
+      rootOptions,
+      journaldDiskUsageBytes: report.journald.diskUsageBytes,
+      zramDevices: report.swap.zramDevices.length,
+      diskBackedSwapActive: report.swap.diskBackedSwapActive,
+      aptCacheBytes: aptCache?.sizeBytes,
+    },
+    recommendation: "Prefer image-time choices for atime, journald policy, zram posture, and cache cleanup; use post-boot checks to verify fstrim support and timer state.",
+  };
+}

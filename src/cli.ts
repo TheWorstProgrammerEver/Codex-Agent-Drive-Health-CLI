@@ -4,16 +4,20 @@ import { runCheck } from "./commands/check.js";
 import { runDoctor } from "./commands/doctor.js";
 import { runLearn } from "./commands/learn.js";
 import { CliError } from "./commands/options.js";
+import { runRunner } from "./commands/runner.js";
 import { runSuggest } from "./commands/suggest.js";
 
 const HELP = `drive-health
 
 Usage:
-  drive-health check [--json] [--target /] [--profile auto|pi-usb-flash|usb-ssd] [--include-identifiers]
+  drive-health check [--json] [--target /] [--profile auto|pi-usb-flash|usb-ssd] [--include-identifiers] [--write-report] [--quiet] [--state-dir PATH] [--retention-count N]
   drive-health suggest [--json] [--profile auto|pi-usb-flash|usb-ssd]
   drive-health apply <remedy-id> [--dry-run] [--yes] [--state-dir PATH]
   drive-health learn [--source local|docs|agent] [--open-pr] [--report-fixture PATH] [--codex-output-dir PATH]
-  drive-health doctor [--json]
+  drive-health runner template
+  drive-health runner install [--dry-run] [--scope user|system] [--bin PATH] [--state-dir PATH] [--root PATH]
+  drive-health runner uninstall [--dry-run] [--scope user|system] [--root PATH]
+  drive-health doctor [--json] [--runner-scope user|system] [--root PATH]
 `;
 
 async function main(argv: string[]): Promise<number> {
@@ -35,6 +39,8 @@ async function main(argv: string[]): Promise<number> {
       return runApply(args);
     case "learn":
       return runLearn(args);
+    case "runner":
+      return runRunner(args);
     default:
       throw new CliError(`Unknown command '${command}'.`);
   }

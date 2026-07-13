@@ -12,6 +12,22 @@ test("Daedalus validation shape is representable in findings", () => {
   assert.equal(findings.find((finding) => finding.id === "smartctl-availability")?.severity, "unsupported");
   assert.equal(findings.find((finding) => finding.id === "journald-footprint")?.severity, "opportunity");
   assert.equal(findings.find((finding) => finding.id === "swap-mode")?.severity, "opportunity");
+  assert.equal(findings.find((finding) => finding.id === "package-cache-footprint")?.severity, "unsupported");
+});
+
+test("Pi USB flash profile summarizes low-write boot posture", () => {
+  const findings = buildFindings({
+    ...daedalusReport(),
+    profile: "pi-usb-flash",
+    directoryUsage: [
+      { path: "/var/cache/apt", sizeBytes: 640 * 1024 ** 2, status: "ok" },
+    ],
+  });
+  const profile = findings.find((finding) => finding.id === "pi-usb-flash-low-write-profile");
+
+  assert.equal(profile?.severity, "warning");
+  assert.match(profile?.summary ?? "", /low-write profile item/);
+  assert.match(profile?.recommendation ?? "", /image-time choices/);
 });
 
 function daedalusReport(): Omit<DriveHealthReport, "findings"> {
@@ -100,4 +116,3 @@ function daedalusReport(): Omit<DriveHealthReport, "findings"> {
     sources: [],
   };
 }
-
