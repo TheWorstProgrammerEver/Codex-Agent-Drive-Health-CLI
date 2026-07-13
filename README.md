@@ -16,17 +16,22 @@ npm run drive-health -- check --json
 npm run drive-health -- suggest
 npm run drive-health -- apply limit-journald-disk-usage --dry-run
 npm run drive-health -- learn --source local
+npm run drive-health -- runner template
+npm run drive-health -- runner install --dry-run --bin /usr/local/bin/drive-health
 npm run drive-health -- doctor
 ```
 
 The command shape is scaffolded as:
 
 ```bash
-drive-health check [--json] [--target /] [--profile auto|pi-usb-flash|usb-ssd] [--include-identifiers]
+drive-health check [--json] [--target /] [--profile auto|pi-usb-flash|usb-ssd] [--include-identifiers] [--write-report] [--quiet] [--state-dir PATH] [--retention-count N]
 drive-health suggest [--json] [--profile auto|pi-usb-flash|usb-ssd]
 drive-health apply <remedy-id> [--dry-run] [--yes]
 drive-health learn [--source local|docs|agent] [--open-pr] [--report-fixture PATH] [--codex-output-dir PATH]
-drive-health doctor
+drive-health runner template
+drive-health runner install [--dry-run] [--scope user|system] [--bin PATH] [--state-dir PATH] [--root PATH]
+drive-health runner uninstall [--dry-run] [--scope user|system] [--root PATH]
+drive-health doctor [--json] [--runner-scope user|system] [--root PATH]
 ```
 
 `check`, `suggest`, dry-run `apply`, `learn`, and basic `doctor` are
@@ -75,3 +80,23 @@ Shareable reports redact host-specific identifiers by default, including
 serial-like identifiers, UUID/PARTUUID values, private user paths, local IP
 addresses, and user-specific names. Use `--include-identifiers` only for local
 troubleshooting.
+
+## Routine Runner
+
+Routine checks are read-only and use `drive-health check --write-report`.
+Report retention is bounded with `--retention-count`; the default is 30 reports.
+The runner installer writes systemd service/timer files for review but does not
+enable them automatically.
+
+See [docs/systemd-runner.md](docs/systemd-runner.md) for unit examples,
+placeholder expansion requirements, state directory layout, dry-run install,
+doctor validation, and uninstall.
+
+## Low-Write Pi USB Flash Profile
+
+Use `--profile pi-usb-flash` for small Raspberry Pi USB flash boot media. The
+profile summarizes atime, journald, fstrim, swap/zram, and apt-cache posture.
+
+See [docs/low-write-boot-profile.md](docs/low-write-boot-profile.md) for
+before-first-boot and after-boot guidance, including Raspberry Pi OS Lite versus
+DietPi-style tradeoffs.
