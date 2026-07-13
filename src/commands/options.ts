@@ -31,6 +31,10 @@ export interface ApplyCliOptions {
 
 const PROFILES = new Set<HostProfile>(["auto", "pi-usb-flash", "usb-ssd"]);
 
+export function isHostProfile(value: string): value is HostProfile {
+  return PROFILES.has(value as HostProfile);
+}
+
 export function parseCheckOptions(args: string[]): CheckOptions {
   const options: CheckOptions = {
     json: false,

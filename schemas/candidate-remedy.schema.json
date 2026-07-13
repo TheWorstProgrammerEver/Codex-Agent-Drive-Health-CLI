@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/drive-health/candidate-remedy.schema.json",
+  "title": "Drive Health Candidate Remedy",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "title",
+    "summary",
+    "evidence",
+    "compatibility",
+    "risk",
+    "rollback",
+    "proposedChecks",
+    "proposedApplyCommands",
+    "testsAndFixtures",
+    "promptChanges"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "drive-health.candidate-remedy.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["source", "relevance"],
+        "properties": {
+          "source": { "type": "string", "minLength": 1 },
+          "url": { "type": "string" },
+          "quote": { "type": "string" },
+          "relevance": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "compatibility": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "risk": {
+      "type": "object",
+      "required": ["level", "notes"],
+      "properties": {
+        "level": { "enum": ["low", "medium", "high"] },
+        "notes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "rollback": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "proposedChecks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["command", "reason"],
+        "properties": {
+          "command": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "proposedApplyCommands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["command", "reason"],
+        "properties": {
+          "command": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "testsAndFixtures": {
+      "type": "object",
+      "required": ["tests", "fixtures"],
+      "properties": {
+        "tests": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "fixtures": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "promptChanges": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}
