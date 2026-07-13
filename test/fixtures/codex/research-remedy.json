@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "drive-health.candidate-remedy.v1",
+  "id": "audit-apt-periodic-cache-policy",
+  "title": "Audit apt periodic cache cleanup policy",
+  "summary": "Review apt periodic cleanup settings before adding any automated package-cache retention remedy.",
+  "evidence": [
+    {
+      "source": "sanitized drive-health report",
+      "relevance": "The apt cache is larger than the package-cache review threshold."
+    },
+    {
+      "source": "Debian apt periodic documentation",
+      "url": "https://manpages.debian.org/bookworm/apt/apt.systemd.daily.8.en.html",
+      "relevance": "Documents the periodic apt cleanup knobs reviewers should verify."
+    }
+  ],
+  "compatibility": [
+    "Debian Bookworm hosts using apt package management.",
+    "Raspberry Pi write-sensitive USB or SSD profiles where cache churn should be explicit.",
+    "Not applicable to hosts that disable apt periodic services or use another package manager."
+  ],
+  "risk": {
+    "level": "low",
+    "notes": [
+      "Read-only checks are low risk.",
+      "Automated cache deletion may increase future network use and should remain advisory until reviewed."
+    ]
+  },
+  "rollback": [
+    "Restore the previous apt periodic configuration files from backup if reviewers later promote a config change.",
+    "Downloaded package files can be reacquired through apt when needed."
+  ],
+  "proposedChecks": [
+    {
+      "command": "systemctl status apt-daily.timer apt-daily-upgrade.timer",
+      "reason": "Check whether apt periodic timers are active."
+    },
+    {
+      "command": "grep -R \"APT::Periodic\" /etc/apt/apt.conf.d",
+      "reason": "Review configured apt cleanup policy."
+    },
+    {
+      "command": "du -sb /var/cache/apt",
+      "reason": "Measure current package cache size before any cleanup."
+    }
+  ],
+  "proposedApplyCommands": [
+    {
+      "command": "apt-get autoclean",
+      "reason": "Potential manual cleanup command for obsolete package files after review."
+    }
+  ],
+  "testsAndFixtures": {
+    "tests": [
+      "Unit test parser coverage for apt periodic config snippets.",
+      "Fixture-backed suggestion test for large apt cache with periodic cleanup disabled."
+    ],
+    "fixtures": [
+      "Sanitized report with large /var/cache/apt usage.",
+      "Sample /etc/apt/apt.conf.d periodic cleanup snippets."
+    ]
+  },
+  "promptChanges": [
+    "Add an apt periodic cleanup example to the research prompt if this candidate is promoted."
+  ]
+}

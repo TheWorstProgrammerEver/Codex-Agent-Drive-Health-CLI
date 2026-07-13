@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "drive-health.report.v1",
+  "generatedAt": "2026-07-13T00:00:00.000Z",
+  "target": "/",
+  "profile": "pi-usb-flash",
+  "redaction": {
+    "identifiersIncluded": false,
+    "redacted": true,
+    "rules": [
+      "serial-like identifiers",
+      "UUID and PARTUUID values",
+      "private user paths",
+      "local IP addresses",
+      "current user and host names"
+    ]
+  },
+  "host": {
+    "osName": "Debian GNU/Linux 12 (bookworm)",
+    "kernelRelease": "6.6.31+rpt-rpi-2712",
+    "architecture": "aarch64"
+  },
+  "tools": [
+    {
+      "name": "smartctl",
+      "command": "smartctl",
+      "packageName": "smartmontools",
+      "installed": false,
+      "packageAvailable": true,
+      "candidateVersion": "7.3-1+b1",
+      "installHint": "Install package 'smartmontools' to enable smartctl.",
+      "status": "missing"
+    }
+  ],
+  "blockDevices": [
+    {
+      "name": "sda2",
+      "type": "part",
+      "mountpoints": ["/"],
+      "filesystemType": "ext4",
+      "discardGranularityBytes": 0,
+      "discardMaxBytes": 0
+    }
+  ],
+  "filesystems": [
+    {
+      "target": "/",
+      "source": "/dev/sda2",
+      "filesystemType": "ext4",
+      "options": ["rw", "noatime"]
+    }
+  ],
+  "diskUsage": [],
+  "directoryUsage": [
+    {
+      "path": "/var/log",
+      "sizeBytes": 402653184,
+      "status": "ok"
+    },
+    {
+      "path": "/var/cache/apt",
+      "sizeBytes": 676331520,
+      "status": "ok"
+    },
+    {
+      "path": "/tmp",
+      "sizeBytes": 44040192,
+      "status": "ok"
+    }
+  ],
+  "trim": {
+    "timer": {
+      "unit": "fstrim.timer",
+      "loadState": "loaded",
+      "unitFileState": "enabled",
+      "activeState": "active",
+      "status": "ok"
+    },
+    "advertisedDiscard": "not-advertised",
+    "dryRun": {
+      "status": "ok",
+      "entries": [],
+      "message": "Dry-run completed but produced no filesystem output."
+    }
+  },
+  "journald": {
+    "storageMode": "auto",
+    "persistentDirectoryPresent": true,
+    "diskUsageBytes": 401604608,
+    "status": "ok"
+  },
+  "swap": {
+    "devices": [
+      {
+        "name": "/var/swap",
+        "type": "file",
+        "sizeBytes": 209715200,
+        "usedBytes": 0
+      }
+    ],
+    "diskBackedSwapActive": true,
+    "zramDevices": [],
+    "swappiness": 60,
+    "status": "ok"
+  },
+  "findings": [
+    {
+      "id": "root-atime-policy",
+      "severity": "ok",
+      "title": "Root filesystem already avoids atime writes",
+      "summary": "Root mount options include noatime."
+    },
+    {
+      "id": "trim-support",
+      "severity": "warning",
+      "title": "TRIM support is not confirmed",
+      "summary": "The timer is active, but discard support is not advertised and dry-run output is empty."
+    },
+    {
+      "id": "smartctl-availability",
+      "severity": "unsupported",
+      "title": "SMART diagnostics are unavailable",
+      "summary": "smartctl is missing, though the package appears installable."
+    },
+    {
+      "id": "journald-footprint",
+      "severity": "opportunity",
+      "title": "Persistent journald usage is worth bounding",
+      "summary": "Persistent journal usage is above the review threshold."
+    },
+    {
+      "id": "swap-mode",
+      "severity": "opportunity",
+      "title": "Disk-backed swap is active",
+      "summary": "A disk-backed swap file is active on a write-sensitive profile."
+    }
+  ],
+  "sources": []
+}

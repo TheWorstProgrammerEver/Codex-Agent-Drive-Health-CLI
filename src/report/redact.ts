@@ -24,7 +24,7 @@ export function redactReport(report: DriveHealthReport, includeIdentifiers: bool
     };
   }
 
-  const redacted = redactValue(report) as DriveHealthReport;
+  const redacted = redactValue(report, "", sensitiveStrings(report)) as DriveHealthReport;
   redacted.redaction = {
     identifiersIncluded: false,
     redacted: true,
@@ -33,22 +33,22 @@ export function redactReport(report: DriveHealthReport, includeIdentifiers: bool
   return redacted;
 }
 
-function redactValue(value: unknown, key = ""): unknown {
+function redactValue(value: unknown, key: string, sensitiveValues: string[]): unknown {
   if (Array.isArray(value)) {
-    return value.map((entry) => redactValue(entry, key));
+    return value.map((entry) => redactValue(entry, key, sensitiveValues));
   }
 
   if (value && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value).map(([entryKey, entryValue]) => [
         entryKey,
-        shouldRedactByKey(entryKey) ? "[redacted-identifier]" : redactValue(entryValue, entryKey),
+        shouldRedactByKey(entryKey) ? "[redacted-identifier]" : redactValue(entryValue, entryKey, sensitiveValues),
       ]),
     );
   }
 
   if (typeof value === "string") {
-    return redactString(value, key);
+    return redactString(value, key, sensitiveValues);
   }
 
   return value;
@@ -69,12 +69,12 @@ function shouldRedactByKey(key: string): boolean {
   );
 }
 
-function redactString(value: string, key: string): string {
+function redactString(value: string, key: string, sensitiveValues: string[]): string {
   if (shouldRedactByKey(key)) {
     return "[redacted-identifier]";
   }
 
-  return redactUserIdentifiers(redactLocalIps(redactPrivatePaths(value)));
+  return redactSensitiveValues(redactUserIdentifiers(redactLocalIps(redactPrivatePaths(value))), sensitiveValues);
 }
 
 function redactPrivatePaths(value: string): string {
@@ -105,6 +105,21 @@ function redactUserIdentifiers(value: string): string {
   }
 
   return value.replace(new RegExp(`\\b(${userNames.join("|")})\\b`, "g"), "[redacted-user]");
+}
+
+function redactSensitiveValues(value: string, sensitiveValues: string[]): string {
+  return sensitiveValues.reduce(
+    (result, sensitive) => result.replace(new RegExp(escapeRegExp(sensitive), "g"), "[redacted-identifier]"),
+    value,
+  );
+}
+
+function sensitiveStrings(report: DriveHealthReport): string[] {
+  return [...new Set([
+    report.host.hostname,
+    process.env.USER,
+    process.env.LOGNAME,
+  ].filter((entry): entry is string => Boolean(entry && entry.length > 2)))];
 }
 
 function escapeRegExp(value: string): string {
