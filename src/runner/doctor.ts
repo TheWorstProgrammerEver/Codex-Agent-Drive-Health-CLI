@@ -2,7 +2,7 @@ import { accessSync, constants } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { resolveExecutable } from "../adapters/command.js";
-import type { HostProfile } from "../report/model.js";
+import { HOST_PROFILES, isHostProfile } from "../report/model.js";
 import {
   DEFAULT_ON_CALENDAR,
   DEFAULT_RANDOMIZED_DELAY,
@@ -81,7 +81,7 @@ async function inspectService(path: string, rootDir: string): Promise<UnitInspec
 
   const issues = serviceIssues(content, rootDir);
   const parts = execStartParts(content);
-  const expected = parts ? renderRunnerServiceUnit(parts) : undefined;
+  const expected = parts && isHostProfile(parts.profile) ? renderRunnerServiceUnit({ ...parts, profile: parts.profile }) : undefined;
   const stale = expected !== undefined && content !== expected;
 
   return {
@@ -137,6 +137,9 @@ function serviceIssues(content: string, rootDir: string): string[] {
   if (parts.command !== "check") {
     issues.push("runner service must invoke drive-health check");
   }
+  if (!isHostProfile(parts.profile)) {
+    issues.push(`runner service must use a supported --profile (${HOST_PROFILES.join(", ")})`);
+  }
   if (parts.args.includes("apply") || parts.args.includes("--include-identifiers")) {
     issues.push("runner service must not apply remedies or include host identifiers");
   }
@@ -182,9 +185,10 @@ function timerIssues(content: string): string[] {
   return issues;
 }
 
-interface ParsedServiceParts extends RunnerUnitOptions {
+interface ParsedServiceParts extends Omit<RunnerUnitOptions, "profile"> {
   command: string;
   args: string[];
+  profile: string;
 }
 
 function execStartParts(content: string | undefined): ParsedServiceParts | undefined {
@@ -195,7 +199,7 @@ function execStartParts(content: string | undefined): ParsedServiceParts | undef
 
   const tokens = line.replace("ExecStart=", "").trim().split(/\s+/);
   const [binPath, command, ...args] = tokens;
-  const profile = valueAfter(args, "--profile") as HostProfile | undefined;
+  const profile = valueAfter(args, "--profile");
   const stateDir = valueAfter(args, "--state-dir");
   const retentionCount = Number(valueAfter(args, "--retention-count"));
 

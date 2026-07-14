@@ -8,7 +8,13 @@ export type FindingSeverity =
   | "critical"
   | "unsupported";
 
-export type HostProfile = "auto" | "pi-usb-flash" | "usb-ssd";
+export const HOST_PROFILES = ["auto", "pi-usb-flash", "usb-ssd"] as const;
+
+export type HostProfile = (typeof HOST_PROFILES)[number];
+
+export function isHostProfile(value: string): value is HostProfile {
+  return (HOST_PROFILES as readonly string[]).includes(value);
+}
 
 export interface SourceRecord {
   id: string;
@@ -184,4 +190,3 @@ export interface DriveHealthReport {
   findings: Finding[];
   sources: SourceRecord[];
 }
-

@@ -98,6 +98,14 @@ test("runner install writes units under temp root and doctor detects stale and i
     assert.equal(ok.service.status, "ok");
     assert.equal(ok.timer.status, "ok");
 
+    const validService = readFileSync(installed.servicePath, "utf8");
+    writeFileSync(installed.servicePath, validService.replace("--profile pi-usb-flash", "--profile unsupported"), "utf8");
+    const invalidProfile = await inspectRunner({ scope: "user", rootDir: root, pathEnv: join(root, "bin") });
+    assert.equal(invalidProfile.status, "degraded");
+    assert.equal(invalidProfile.service.status, "invalid");
+    assert.match(invalidProfile.service.issues.join("\n"), /supported --profile/);
+    writeFileSync(installed.servicePath, validService, "utf8");
+
     const staleService = readFileSync(installed.servicePath, "utf8").replace("PrivateTmp=yes\n", "");
     writeFileSync(installed.servicePath, staleService, "utf8");
     const stale = await inspectRunner({ scope: "user", rootDir: root, pathEnv: join(root, "bin") });

@@ -1,5 +1,7 @@
-import type { HostProfile } from "../report/model.js";
+import { isHostProfile, type HostProfile } from "../report/model.js";
 import { DEFAULT_REPORT_RETENTION_COUNT } from "../state/reports.js";
+
+export { isHostProfile };
 
 export class CliError extends Error {
   constructor(
@@ -32,12 +34,6 @@ export interface ApplyCliOptions {
   yes: boolean;
   profile: HostProfile;
   stateDir?: string;
-}
-
-const PROFILES = new Set<HostProfile>(["auto", "pi-usb-flash", "usb-ssd"]);
-
-export function isHostProfile(value: string): value is HostProfile {
-  return PROFILES.has(value as HostProfile);
 }
 
 export function parseCheckOptions(args: string[]): CheckOptions {
@@ -82,10 +78,10 @@ export function parseCheckOptions(args: string[]): CheckOptions {
 
     if (arg === "--profile") {
       const profile = readValue(args, index, "--profile");
-      if (!PROFILES.has(profile as HostProfile)) {
+      if (!isHostProfile(profile)) {
         throw new CliError(`Unsupported profile '${profile}'.`);
       }
-      options.profile = profile as HostProfile;
+      options.profile = profile;
       index += 1;
       continue;
     }
@@ -128,10 +124,10 @@ export function parseSuggestOptions(args: string[]): SuggestOptions {
 
     if (arg === "--profile") {
       const profile = readValue(args, index, "--profile");
-      if (!PROFILES.has(profile as HostProfile)) {
+      if (!isHostProfile(profile)) {
         throw new CliError(`Unsupported profile '${profile}'.`);
       }
-      options.profile = profile as HostProfile;
+      options.profile = profile;
       index += 1;
       continue;
     }
@@ -171,10 +167,10 @@ export function parseApplyOptions(args: string[]): ApplyCliOptions {
 
     if (arg === "--profile") {
       const profile = readValue(args, index, "--profile");
-      if (!PROFILES.has(profile as HostProfile)) {
+      if (!isHostProfile(profile)) {
         throw new CliError(`Unsupported profile '${profile}'.`);
       }
-      options.profile = profile as HostProfile;
+      options.profile = profile;
       index += 1;
       continue;
     }
